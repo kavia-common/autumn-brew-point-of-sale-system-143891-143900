@@ -1,48 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React from 'react';
 import './App.css';
+import './theme.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Header } from './components/layout/Header';
+import { Sidebar } from './components/layout/Sidebar';
+import { Footer } from './components/layout/Footer';
+import OrdersPage from './pages/OrdersPage';
+import MenuPage from './pages/MenuPage';
+import PaymentsPage from './pages/PaymentsPage';
+import { OrderProvider } from './context/OrderContext';
 
-// PUBLIC_INTERFACE
+/**
+ * Root application shell following the classic layout:
+ * - Header with navigation
+ * - Left Sidebar for categories
+ * - Main content: order tickets and menu
+ * - Footer: order summary and payment actions
+ */
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <OrderProvider>
+        <div className="app-root">
+          <Header />
+          <div className="app-body">
+            <Sidebar />
+            <main id="main" className="app-main" role="main" aria-label="Content">
+              <Routes>
+                <Route path="/" element={<Navigate to="/orders" replace />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/menu" element={<MenuPage />} />
+                <Route path="/payments" element={<PaymentsPage />} />
+              </Routes>
+            </main>
+          </div>
+          <Footer />
+        </div>
+      </OrderProvider>
+    </BrowserRouter>
   );
 }
 

@@ -1,82 +1,62 @@
-# Lightweight React Template for KAVIA
+# Fall Cafe POS Frontend
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A classic, autumn-inspired React POS interface for cafe staff. Provides order processing, menu management, and payment handling with a clean, structured layout and subtle shadows.
 
-## Features
+## Highlights
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Classic layout: Header, left Sidebar, Main content, and Footer summary
+- Autumn theme palette via CSS variables
+- Accessible and responsive with semantic markup
+- Supabase integration scaffolded via environment variables
+- Maintainable structure: components, pages, context, and lib
 
 ## Getting Started
 
-In the project directory, you can run:
+1. Install dependencies
+   - npm install
 
-### `npm start`
+2. Configure environment
+   - Copy `.env.example` to `.env` and set:
+     - REACT_APP_SUPABASE_URL
+     - REACT_APP_SUPABASE_KEY
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+3. Run the app
+   - npm start
+   - Open http://localhost:3000
 
-### `npm test`
+4. Tests
+   - npm test
 
-Launches the test runner in interactive watch mode.
+## Project Structure
 
-### `npm run build`
+- src/theme.css: Theme variables (colors, shadows, borders)
+- src/App.css: Layout and component styles (classic, subtle shadows)
+- src/context/OrderContext.jsx: Order state, totals, and actions
+- src/lib/supabaseClient.js: Supabase client (uses env vars)
+- src/components/layout: Header, Sidebar, Footer
+- src/components: MenuItemCard, OrderTicket
+- src/pages: OrdersPage, MenuPage, PaymentsPage
+- src/App.js: Routes and app shell
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Supabase
 
-## Customization
+Environment variables:
+- REACT_APP_SUPABASE_URL
+- REACT_APP_SUPABASE_KEY
 
-### Colors
+The app works with mock data when these are not provided. On integration, wire the pages to your Supabase tables (e.g., menu_items, orders, payments).
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+## Theme
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+Primary: #1E3A8A
+Secondary: #F59E0B
+Background: #F3F4F6
+Surface: #FFFFFF
+Text: #111827
 
-### Components
+These are applied via CSS variables and can be adjusted in `src/theme.css`.
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+## Notes
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
-
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- This is a scaffold for quick iteration. Replace mock data with real Supabase queries as backend is ready.
+- Avoid hardcoding credentials; always use environment variables.
