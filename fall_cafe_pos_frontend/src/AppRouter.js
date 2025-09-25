@@ -8,10 +8,15 @@ import Payment from "./pages/Payment";
 import SalesOverview from "./pages/SalesOverview";
 import { useAuth } from "./context/AuthContext";
 
-// PUBLIC_INTERFACE
+ // PUBLIC_INTERFACE
 export default function AppRouter() {
   /**
-   * App router with public (login) and protected routes
+   * App router with public (login) and protected routes.
+   * Uses react-router-dom v6 with BrowserRouter as the top-level router.
+   * Routes:
+   * - /login (public)
+   * - /orders, /menu, /payment, /sales (protected via RequireAuth)
+   * Returns: JSX.Element
    */
   return (
     <BrowserRouter>
