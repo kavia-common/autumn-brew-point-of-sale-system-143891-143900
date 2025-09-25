@@ -8,6 +8,8 @@ import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient';
  * - Archive/Unarchive with .update (toggle is_active)
  * - Edit existing items (inline or via modal) with Supabase .update
  * - Includes form validation, loading/error states, and user feedback
+ * - NEW: Supports image uploads to Supabase Storage ('menu-images' bucket) for both add and edit flows.
+ *        Falls back to manual image_url when no file is selected.
  *
  * Requirements:
  * - Env variables (must be provided by user in .env):
@@ -28,16 +30,63 @@ export default function MenuPage() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   // Editing state
   const [editingId, setEditingId] = useState(null); // id of item being edited inline
   const [editDraft, setEditDraft] = useState({ name: '', price: '', category: '', image_url: '' });
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editErr, setEditErr] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
   // Modal state (optional alternative to inline)
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Utility: ensure 'menu-images' bucket exists and is public
+  async function ensureBucket() {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY.');
+    }
+    // Attempt to create the bucket; if it exists, Supabase returns an error we can ignore.
+    const bucketName = 'menu-images';
+    try {
+      const { error: createErr } = await client.storage.createBucket(bucketName, {
+        public: true,
+      });
+      if (createErr && !String(createErr.message || '').toLowerCase().includes('already exists')) {
+        // If another error (not already exists), throw.
+        throw createErr;
+      }
+    } catch (e) {
+      // Re-throw to caller to surface error.
+      throw e;
+    }
+    return bucketName;
+  }
+
+  // Utility: upload a file and return public URL
+  async function uploadImageAndGetPublicUrl(file, itemIdHint = 'new') {
+    if (!file) return null;
+    const bucketName = await ensureBucket();
+
+    // Simple type guard and extension
+    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+    const safeExt = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext) ? ext : 'jpg';
+    const path = `${itemIdHint}/${Date.now()}_${Math.random().toString(36).slice(2)}.${safeExt}`;
+
+    const { error: uploadErr } = await client.storage.from(bucketName).upload(path, file, {
+      upsert: false,
+      cacheControl: '3600',
+      contentType: file.type || undefined,
+    });
+    if (uploadErr) throw uploadErr;
+
+    const { data: publicData } = client.storage.from(bucketName).getPublicUrl(path);
+    return publicData?.publicUrl || null;
+  }
 
   // Basic client-side validation for create
   function validateCreate() {
@@ -109,7 +158,7 @@ export default function MenuPage() {
 
   // PUBLIC_INTERFACE
   async function createItem(e) {
-    /** Creates a new menu item in Supabase (menu_items). */
+    /** Creates a new menu item in Supabase (menu_items). Supports optional image file upload. */
     e?.preventDefault?.();
     setLoadingCreate(true);
     setError('');
@@ -123,11 +172,24 @@ export default function MenuPage() {
     }
 
     try {
+      let finalImageUrl = imageUrl.trim() || null;
+
+      // If a file is provided, upload and use its public URL
+      if (imageFile) {
+        try {
+          const uploadedUrl = await uploadImageAndGetPublicUrl(imageFile, 'new-item');
+          if (uploadedUrl) finalImageUrl = uploadedUrl;
+        } catch (uploadErr) {
+          // Non-fatal: fallback to any typed URL if present, else no image.
+          setError(`Image upload failed: ${uploadErr?.message || 'Unknown error'}. Proceeding without uploaded image.`);
+        }
+      }
+
       const payload = {
         name: name.trim(),
         price: Number(Number(price).toFixed(2)),
         category: category.trim(),
-        image_url: imageUrl.trim() || null,
+        image_url: finalImageUrl,
         is_active: true,
       };
       const { data, error: insErr } = await client
@@ -156,6 +218,8 @@ export default function MenuPage() {
       setPrice('');
       setCategory('');
       setImageUrl('');
+      setImageFile(null);
+      setImagePreview('');
     } catch (e) {
       setError(e?.message || 'Failed to create item.');
     } finally {
@@ -198,6 +262,8 @@ export default function MenuPage() {
       category: item.category || '',
       image_url: item.image_url || '',
     });
+    setEditImageFile(null);
+    setEditImagePreview('');
     setEditErr('');
     setEditSuccess('');
   }
@@ -205,13 +271,15 @@ export default function MenuPage() {
   function cancelInlineEdit() {
     setEditingId(null);
     setEditDraft({ name: '', price: '', category: '', image_url: '' });
+    setEditImageFile(null);
+    setEditImagePreview('');
     setEditErr('');
     setEditSuccess('');
   }
 
   // PUBLIC_INTERFACE
   async function saveInlineEdit(id) {
-    /** Validate and persist edited fields for a single item via Supabase .update */
+    /** Validate and persist edited fields for a single item via Supabase .update. If a new file is selected, upload then update image_url. */
     if (!id) return;
     const errs = validateEdit(editDraft);
     if (errs.length > 0) {
@@ -224,11 +292,23 @@ export default function MenuPage() {
     setEditErr('');
     setEditSuccess('');
     try {
+      let finalImageUrl = editDraft.image_url?.trim() || null;
+
+      // If a new file is provided in edit flow, upload and override
+      if (editImageFile) {
+        try {
+          const uploadedUrl = await uploadImageAndGetPublicUrl(editImageFile, `item-${id}`);
+          if (uploadedUrl) finalImageUrl = uploadedUrl;
+        } catch (uploadErr) {
+          setEditErr(`Image upload failed: ${uploadErr?.message || 'Unknown error'}. Keeping existing image URL.`);
+        }
+      }
+
       const patch = {
         name: editDraft.name.trim(),
         price: Number(Number(editDraft.price).toFixed(2)),
         category: editDraft.category.trim(),
-        image_url: editDraft.image_url.trim() || null,
+        image_url: finalImageUrl,
       };
 
       const { data, error: updErr } = await client
@@ -260,6 +340,8 @@ export default function MenuPage() {
       setSuccess(`Saved changes to "${data.name}".`);
       setEditingId(null);
       setEditDraft({ name: '', price: '', category: '', image_url: '' });
+      setEditImageFile(null);
+      setEditImagePreview('');
 
       // Refresh list to ensure consistency (e.g., triggers, computed fields)
       await loadItems();
@@ -363,6 +445,46 @@ export default function MenuPage() {
             </div>
           </div>
 
+          {/* Image file selector with live preview */}
+          <div className="grid grid-2" style={{ alignItems: 'center' }}>
+            <div>
+              <label htmlFor="image_file" className="sr-only">Upload Image</label>
+              <input
+                id="image_file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImageFile(file);
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setImagePreview(url);
+                  } else {
+                    setImagePreview('');
+                  }
+                }}
+                aria-label="Select image file to upload (optional)"
+                className="input"
+              />
+            </div>
+            <div aria-hidden style={{ height: 110, borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden', background: imagePreview || imageUrl ? 'var(--surface)' : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,74,39,0.10))' }}>
+              {(imagePreview || imageUrl) ? (
+                <img
+                  src={imagePreview || imageUrl}
+                  alt="Preview of new menu item"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '100%', height: '100%',
+                    background: 'radial-gradient(60% 60% at 30% 30%, rgba(255,255,255,0.35), transparent), var(--autumn-grad-strong)',
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               className="btn btn-primary"
@@ -377,6 +499,7 @@ export default function MenuPage() {
               type="button"
               onClick={() => {
                 setName(''); setPrice(''); setCategory(''); setImageUrl('');
+                setImageFile(null); setImagePreview('');
                 setError(''); setSuccess('');
               }}
             >
@@ -384,7 +507,7 @@ export default function MenuPage() {
             </button>
           </div>
           <p style={{ margin: 0, color: 'var(--muted)', fontSize: 12 }}>
-            Tip: Use consistent categories to help staff filter quickly. Image URL can be added later.
+            Tip: You can either paste an Image URL or upload a file (stored in Supabase Storage).
           </p>
         </form>
       </div>
@@ -408,6 +531,7 @@ export default function MenuPage() {
           <div className="grid grid-3">
             {items.map((i) => {
               const isEditing = editingId === i.id;
+              const previewSrc = isEditing ? (editImagePreview || editDraft.image_url) : i.image_url;
               return (
                 <div key={i.id} className="card" style={{ display: 'grid', gap: 8 }}>
                   <div
@@ -416,15 +540,15 @@ export default function MenuPage() {
                       height: 110,
                       borderRadius: 10,
                       border: '1px solid var(--border)',
-                      background: i.image_url
+                      background: previewSrc
                         ? 'var(--surface)'
                         : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,74,39,0.10))',
                       overflow: 'hidden',
                     }}
                   >
-                    {(isEditing ? editDraft.image_url : i.image_url) ? (
+                    {previewSrc ? (
                       <img
-                        src={isEditing ? editDraft.image_url : i.image_url}
+                        src={previewSrc}
                         alt={`${i.name} image`}
                         loading="eager"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
@@ -576,6 +700,47 @@ export default function MenuPage() {
                           />
                         </div>
                       </div>
+
+                      {/* File input + live preview for edit */}
+                      <div className="grid grid-2" style={{ alignItems: 'center' }}>
+                        <div>
+                          <label htmlFor={`edit-image-file-${i.id}`} className="sr-only">Upload new image</label>
+                          <input
+                            id={`edit-image-file-${i.id}`}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setEditImageFile(file);
+                              if (file) {
+                                const url = URL.createObjectURL(file);
+                                setEditImagePreview(url);
+                              } else {
+                                setEditImagePreview('');
+                              }
+                            }}
+                            aria-label="Select image file to upload for this item (optional)"
+                            className="input"
+                          />
+                        </div>
+                        <div aria-hidden style={{ height: 110, borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden', background: (editImagePreview || editDraft.image_url) ? 'var(--surface)' : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,74,39,0.10))' }}>
+                          {(editImagePreview || editDraft.image_url) ? (
+                            <img
+                              src={editImagePreview || editDraft.image_url}
+                              alt="Preview of edited menu item"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: '100%', height: '100%',
+                                background: 'radial-gradient(60% 60% at 30% 30%, rgba(255,255,255,0.35), transparent), var(--autumn-grad-strong)',
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
                           type="submit"
@@ -694,14 +859,14 @@ export default function MenuPage() {
                   borderRadius: 10,
                   border: '1px solid var(--border)',
                   overflow: 'hidden',
-                  background: editDraft.image_url
+                  background: (editImagePreview || editDraft.image_url)
                     ? 'var(--surface)'
                     : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,74,39,0.10))',
                 }}
               >
-                {editDraft.image_url ? (
+                {(editImagePreview || editDraft.image_url) ? (
                   <img
-                    src={editDraft.image_url}
+                    src={editImagePreview || editDraft.image_url}
                     alt="Preview of menu item"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   />
@@ -714,6 +879,29 @@ export default function MenuPage() {
                   />
                 )}
               </div>
+
+              {/* Modal: file input for image upload */}
+              <div>
+                <label htmlFor="modal-edit-image-file" className="sr-only">Upload image</label>
+                <input
+                  id="modal-edit-image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setEditImageFile(file);
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setEditImagePreview(url);
+                    } else {
+                      setEditImagePreview('');
+                    }
+                  }}
+                  aria-label="Select image file to upload for this item (optional)"
+                  className="input"
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button
                   className="btn"
@@ -737,7 +925,7 @@ export default function MenuPage() {
         )}
 
         <p style={{ margin: 0, color: 'var(--muted)', fontSize: 12 }}>
-          You can edit items inline or via modal. Image URL changes update the preview immediately.
+          You can edit items inline or via modal. Paste an Image URL or upload a file to store it in Supabase Storage. Previews update immediately.
         </p>
       </div>
     </div>
