@@ -8,6 +8,24 @@ import { getURL } from './getURL';
  */
 let supabaseInstance = null;
 
+/**
+ * Reduce a full URL to a safe, non-sensitive host string for logging.
+ * Examples:
+ *  - https://your-project.supabase.co -> your-project.supabase.co
+ *  - http://localhost:54321 -> localhost
+ */
+function redactHost(inputUrl) {
+  try {
+    const u = new URL(inputUrl);
+    // Return hostname only (no protocol, no path, no port in logs)
+    return u.hostname || 'unknown-host';
+  } catch {
+    // If URL constructor fails, attempt a naive strip of protocol
+    if (!inputUrl) return 'unset';
+    return String(inputUrl).replace(/^https?:\/\//i, '').split('/')[0];
+  }
+}
+
 function validateEnv() {
   const url = process.env.REACT_APP_SUPABASE_URL;
   const key = process.env.REACT_APP_SUPABASE_KEY;
@@ -15,8 +33,8 @@ function validateEnv() {
   if (!url || !key) {
     // eslint-disable-next-line no-console
     console.warn(
-      'Supabase env missing: Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY in .env. ' +
-      'App will use local fallbacks for read operations and may not persist data.'
+      '[Supabase] Missing environment variables. Expected REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY. ' +
+      'Using no-op client; app will fall back to local reads and may not persist data.'
     );
   }
   return { url: url || '', key: key || '' };
@@ -53,6 +71,8 @@ export function getSupabase() {
 
   // If missing or invalid, return a safe no-op client to avoid crashing at runtime
   if (!url || !key) {
+    // eslint-disable-next-line no-console
+    console.info('[Supabase] Using no-op client (env missing).');
     supabaseInstance = makeNoopSupabase();
     return supabaseInstance;
   }
@@ -66,9 +86,11 @@ export function getSupabase() {
         detectSessionInUrl: true,
       }
     });
+    // eslint-disable-next-line no-console
+    console.info(`[Supabase] Client initialized for host: ${redactHost(url)}`);
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Failed to create Supabase client, falling back to no-op client:', e?.message || e);
+    console.error('[Supabase] Failed to create client. Falling back to no-op:', e?.message || e);
     supabaseInstance = makeNoopSupabase();
   }
   return supabaseInstance;
