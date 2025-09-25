@@ -4,6 +4,7 @@ import OrdersPage from './pages/OrdersPage';
 import MenuPage from './pages/MenuPage';
 import SalesPage from './pages/SalesPage';
 import './App.css';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /**
  * PUBLIC_INTERFACE
@@ -13,15 +14,17 @@ import './App.css';
 function App() {
   return (
     <div className="App" style={{ minHeight: '100vh' }}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<OrdersPage />} />
-            <Route path="/menu" element={<MenuPage />} />
-            <Route path="/sales" element={<SalesPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<OrdersPage />} />
+              <Route path="/menu" element={<MenuPage />} />
+              <Route path="/sales" element={<SalesPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ErrorBoundary>
     </div>
   );
 }

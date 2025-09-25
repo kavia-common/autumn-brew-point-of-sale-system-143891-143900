@@ -22,6 +22,28 @@ function validateEnv() {
   return { url: url || '', key: key || '' };
 }
 
+/**
+ * Build a safe no-op Supabase-like client that throws controlled errors.
+ * This prevents hard crashes when env is not present and allows api.js to fallback.
+ */
+function makeNoopSupabase() {
+  const errorFn = () => ({
+    select: () => ({ order: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }),
+    order: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+    insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }) }),
+    upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }) }),
+    delete: () => ({ eq: () => Promise.resolve({ error: new Error('Supabase not configured') }) }),
+    eq: () => Promise.resolve({ error: new Error('Supabase not configured') }),
+    limit: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
+  });
+  return {
+    auth: {
+      getSession: async () => ({ data: null, error: new Error('Supabase not configured') })
+    },
+    from: () => errorFn()
+  };
+}
+
 // PUBLIC_INTERFACE
 export function getSupabase() {
   /** Returns a singleton Supabase client configured using env variables. */
@@ -29,14 +51,26 @@ export function getSupabase() {
 
   const { url, key } = validateEnv();
 
-  supabaseInstance = createClient(url, key, {
-    auth: {
-      // This prepares for future email/OAuth flows. Redirects must be allowlisted in Supabase.
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-    }
-  });
+  // If missing or invalid, return a safe no-op client to avoid crashing at runtime
+  if (!url || !key) {
+    supabaseInstance = makeNoopSupabase();
+    return supabaseInstance;
+  }
+
+  try {
+    supabaseInstance = createClient(url, key, {
+      auth: {
+        // This prepares for future email/OAuth flows. Redirects must be allowlisted in Supabase.
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      }
+    });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to create Supabase client, falling back to no-op client:', e?.message || e);
+    supabaseInstance = makeNoopSupabase();
+  }
   return supabaseInstance;
 }
 

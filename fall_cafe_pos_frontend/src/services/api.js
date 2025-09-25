@@ -8,6 +8,7 @@ import { getSupabase } from './supabaseClient';
 export async function fetchMenu() {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     const { data, error } = await sb.from('menu_items').select('*').order('category', { ascending: true }).order('name', { ascending: true });
     if (error) throw error;
     return data || [];
@@ -33,6 +34,7 @@ export async function fetchMenu() {
 export async function saveOrder(order) {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     const { data, error } = await sb.from('orders').insert(order).select('*').single();
     if (error) throw error;
     return data;
@@ -51,6 +53,7 @@ export async function saveOrder(order) {
 export async function fetchOrders(limit = 50) {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
@@ -68,6 +71,7 @@ export async function fetchOrders(limit = 50) {
 export async function upsertMenuItem(item) {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     const { data, error } = await sb.from('menu_items').upsert(item).select('*').single();
     if (error) throw error;
     return data;
@@ -85,6 +89,7 @@ export async function upsertMenuItem(item) {
 export async function deleteMenuItem(id) {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     const { error } = await sb.from('menu_items').delete().eq('id', id);
     if (error) throw error;
     return true;
@@ -102,6 +107,7 @@ export async function deleteMenuItem(id) {
 export async function fetchSalesSummary() {
   const sb = getSupabase();
   try {
+    if (!sb?.from) throw new Error('Supabase client unavailable');
     // If a view or RPC exists, you can call it; here we try a simple aggregation
     const { data, error } = await sb
       .from('orders')
