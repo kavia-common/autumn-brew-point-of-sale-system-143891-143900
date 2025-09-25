@@ -4,13 +4,21 @@ import OrderTicket from '../components/OrderTicket';
 import { useOrder } from '../context/OrderContext';
 import { isSupabaseConfigured, fetchMenuItems } from '../lib/supabaseClient';
 
+// Seasonal fall-themed placeholder illustrations (URLs or data URIs).
+// For now we use simple emoji-based alt descriptions and gradient background in the card when image is missing.
+// Future extension: host real illustrative assets under /public/assets and reference them here.
+const FALL_PLACEHOLDER = {
+  src: '', // leave empty to trigger CSS gradient fallback in card
+  alt: 'Seasonal fall menu item placeholder',
+};
+
 const mockMenu = [
-  { id: 'latte', name: 'Latte', price: 4.50, category: 'coffee' },
-  { id: 'americano', name: 'Americano', price: 3.00, category: 'coffee' },
-  { id: 'pumpkin_spice', name: 'Pumpkin Spice Latte', price: 5.25, category: 'seasonal' },
-  { id: 'chai', name: 'Chai Tea', price: 3.75, category: 'tea' },
-  { id: 'muffin', name: 'Blueberry Muffin', price: 2.95, category: 'bakery' },
-  { id: 'croissant', name: 'Butter Croissant', price: 3.25, category: 'bakery' },
+  { id: 'latte', name: 'Latte', price: 4.50, category: 'coffee', image_url: '' },
+  { id: 'americano', name: 'Americano', price: 3.00, category: 'coffee', image_url: '' },
+  { id: 'pumpkin_spice', name: 'Pumpkin Spice Latte', price: 5.25, category: 'seasonal', image_url: '' },
+  { id: 'chai', name: 'Chai Tea', price: 3.75, category: 'tea', image_url: '' },
+  { id: 'muffin', name: 'Blueberry Muffin', price: 2.95, category: 'bakery', image_url: '' },
+  { id: 'croissant', name: 'Butter Croissant', price: 3.25, category: 'bakery', image_url: '' },
 ];
 
 export default function OrdersPage() {
@@ -41,6 +49,7 @@ export default function OrdersPage() {
               name: i.name,
               price: Number(i.price ?? 0),
               category: i.category || 'other',
+              image_url: i.image_url || '', // Use image URL if available
             }));
 
           if (!cancelled && items.length > 0) {
@@ -84,7 +93,16 @@ export default function OrdersPage() {
           </div>
         )}
         {!loading && menu.map((m) => (
-          <MenuItemCard key={m.id} item={m} onAdd={addItem} />
+          <MenuItemCard
+            key={m.id}
+            item={{
+              ...m,
+              // Provide fallback info for image handling
+              image_url: m.image_url || FALL_PLACEHOLDER.src,
+              image_alt: m.image_url ? `${m.name} (${m.category})` : FALL_PLACEHOLDER.alt,
+            }}
+            onAdd={addItem}
+          />
         ))}
       </section>
     </div>
