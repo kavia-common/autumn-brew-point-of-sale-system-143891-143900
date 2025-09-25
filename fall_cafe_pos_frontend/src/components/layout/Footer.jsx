@@ -9,7 +9,7 @@ export function Footer() {
       borderRadius: 0,
       borderTop: '1px solid var(--border)',
       boxShadow: 'var(--shadow-sm)',
-      background: 'var(--surface)',
+      background: 'linear-gradient(180deg, rgba(124,74,39,0.04), rgba(245,158,11,0.03)), var(--surface)',
       position: 'sticky',
       bottom: 0,
       zIndex: 10

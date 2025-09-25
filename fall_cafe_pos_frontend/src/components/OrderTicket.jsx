@@ -19,7 +19,12 @@ export default function OrderTicket() {
           <div style={{ color: 'var(--muted)' }}>No items yet. Add from the menu.</div>
         )}
         {items.map((i) => (
-          <div key={i.id} className="card" style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center' }}>
+          <div key={i.id} className="card" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            alignItems: 'center',
+            borderLeft: '4px solid var(--autumn-amber)'
+          }}>
             <div>
               <div style={{ fontWeight: 600 }}>{i.name}</div>
               <div style={{ color: 'var(--muted)', fontSize: 12 }}>${i.price.toFixed(2)} each</div>

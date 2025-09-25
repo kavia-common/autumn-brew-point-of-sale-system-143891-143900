@@ -12,7 +12,7 @@ const categories = [
 export function Sidebar() {
   return (
     <aside aria-label="Order categories" style={{
-      background: 'var(--surface)',
+      background: 'linear-gradient(180deg, rgba(245,158,11,0.04), rgba(124,74,39,0.02)), var(--surface)',
       borderRight: '1px solid var(--border)',
       padding: 12,
       minHeight: 0

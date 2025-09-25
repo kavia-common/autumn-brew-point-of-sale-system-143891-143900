@@ -11,10 +11,20 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    /* subtle leaf pattern overlay */
+    var(--autumn-pattern),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  line-height: 1.5;
+  /* Slightly rounder, warm-feeling system font stack */
+  font-family:
+    "Segoe UI Rounded",
+    "SF Pro Rounded",
+    "Nunito",
+    "Trebuchet MS",
+    Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.55;
 }
 
 a {
@@ -24,6 +34,19 @@ a {
 
 button {
   font: inherit;
+}
+
+/* Warm heading tone with subtle tracking and weight */
+h1, h2, h3, h4 {
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+/* Accessible focus ring themed for autumn */
+:where(a, button, input, [tabindex]):focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  transition: box-shadow 120ms ease;
 }
 
 .app-root {
@@ -41,27 +64,62 @@ button {
 }
 
 .app-main {
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, rgba(245,158,11,0.04), transparent 120px),
+    var(--surface);
   padding: 16px;
   border-left: 1px solid var(--border);
+  /* soft illustrated corner leaves via mask */
+  position: relative;
+}
+.app-main::before {
+  /* Decorative corner flourish (non-intrusive) */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 220px;
+  height: 160px;
+  background: var(--autumn-grad);
+  opacity: 0.55;
+  filter: blur(18px) saturate(0.95);
+  border-radius: 0 0 0 var(--radius-lg);
+  pointer-events: none;
+  mask-image: radial-gradient(120px 90px at 100% 0%, rgba(0,0,0,0.65) 25%, transparent 70%);
 }
 
 /* Utility components */
 .card {
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(124,74,39,0.035), rgba(255,255,255,0.9)), var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(31, 41, 55, 0.05);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   padding: 12px;
+  /* Subtle paper texture effect using repeating radial gradient */
+  background-image:
+    radial-gradient(12px 12px at 16px 16px, rgba(124,74,39,0.018), transparent 40%),
+    radial-gradient(10px 10px at 48px 32px, rgba(245,158,11,0.015), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15));
+  background-blend-mode: normal, normal, multiply;
 }
 
 .section-title {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   color: var(--muted);
   text-transform: uppercase;
   margin: 0 0 8px;
+  border-left: 4px solid var(--autumn-amber);
+  padding-left: 8px;
+  opacity: 0.95;
+}
+
+/* Section divider utility for designers to extend */
+.section-divider {
+  height: 10px;
+  background:
+    linear-gradient(90deg, transparent, rgba(245,158,11,0.35), transparent);
+  border-radius: 999px;
 }
 
 /* Buttons */
@@ -76,12 +134,15 @@ button {
   padding: 10px 14px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 80ms ease;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 80ms ease, box-shadow 160ms ease;
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.25));
 }
 
 .btn:hover {
-  background: var(--bg);
+  background: var(--surface-warm);
   border-color: var(--border-strong);
+  box-shadow: 0 2px 6px rgba(27,25,23,0.06);
 }
 
 .btn:active {
@@ -89,23 +150,29 @@ button {
 }
 
 .btn-primary {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--autumn-btn-grad);
+  border-color: transparent;
   color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
 }
 
 .btn-primary:hover {
-  background: var(--primary-strong);
-  border-color: var(--primary-strong);
+  background: var(--autumn-btn-grad-hover);
+  border-color: transparent;
 }
 
 .btn-ghost {
   background: transparent;
+  border-color: var(--border);
+}
+.btn-ghost:hover {
+  background: linear-gradient(180deg, rgba(245,158,11,0.06), rgba(124,74,39,0.04));
+  border-color: var(--border-strong);
 }
 
 .btn-danger {
-  background: var(--error);
-  border-color: var(--error);
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+  border-color: #b91c1c;
   color: #fff;
 }
 
@@ -153,8 +220,52 @@ button {
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+.input:hover {
+  border-color: var(--border-strong);
+}
+.input:focus {
+  background: var(--surface);
+  box-shadow: var(--focus-ring);
 }
 
-.input::placeholder {
-  color: var(--muted);
+/* Header, Sidebar, Footer seasonal accents without layout changes */
+header.card, footer.card, aside[aria-label="Order categories"] {
+  background:
+    linear-gradient(180deg, rgba(245,158,11,0.05), rgba(124,74,39,0.03)),
+    var(--surface);
+  backdrop-filter: saturate(1.05);
+}
+
+/* Decorative branch-like divider in header/footer */
+header.card::after, footer.card::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 6px;
+  background:
+    linear-gradient(90deg, transparent, rgba(124,74,39,0.25), transparent);
+}
+
+/* Subtle hover for sidebar items to improve discoverability */
+aside[aria-label="Order categories"] .btn {
+  justify-content: space-between;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.15));
+}
+aside[aria-label="Order categories"] .btn:hover span[aria-hidden] {
+  transform: translateX(2px);
+  transition: transform 120ms ease;
+}
+
+/* Optional: warm border accents for important cards (designers can add class .accent-card) */
+.accent-card {
+  border-color: color-mix(in srgb, var(--autumn-amber) 35%, var(--border));
+  box-shadow: 0 8px 22px rgba(217,119,6,0.10);
+  background: linear-gradient(180deg, rgba(245,158,11,0.06), rgba(255,255,255,0.85));
+}
+
+/* Accessibility: ensure contrast for text on colored buttons in dark modes */
+@media (prefers-contrast: more) {
+  .btn-primary { text-decoration: underline; }
 }

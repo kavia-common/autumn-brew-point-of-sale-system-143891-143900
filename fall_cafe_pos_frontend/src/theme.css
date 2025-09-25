@@ -1,32 +1,85 @@
 :root {
-  /* From style guide */
+  /* From style guide (base) */
   --primary: #1E3A8A; /* Blue 900 */
   --primary-strong: #17306e;
   --secondary: #F59E0B; /* Amber 500 */
-  --success: #F59E0B;
+  --success: #8C6A3A; /* warm ochre success for autumn tone */
   --error: #DC2626;
-  --bg: #F3F4F6; /* Gray-100 */
+
+  /* Neutrals */
+  --bg: #F7F5F2; /* Warm off-white (autumn paper) */
   --surface: #FFFFFF;
-  --text: #111827; /* Gray-900 */
-  --muted: #6B7280; /* Gray-500 */
-  --border: #E5E7EB; /* Gray-200 */
-  --border-strong: #D1D5DB; /* Gray-300 */
+  --surface-warm: #FFF9F3; /* very light warm surface */
+  --text: #1b1917; /* softer than pure black */
+  --muted: #6B5E52; /* warm gray-brown */
+  --border: #E6E0D8; /* warm gray-200 */
+  --border-strong: #D5CBBE; /* warm gray-300 */
 
-  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
-  --shadow-md: 0 4px 10px rgba(17, 24, 39, 0.08);
+  /* Autumn palette extensions */
+  --autumn-amber: #F59E0B; /* amber */
+  --autumn-amber-700: #B45309;
+  --autumn-pumpkin: #D97706; /* deep orange */
+  --autumn-maple: #B91C1C; /* maple red */
+  --autumn-rust: #9A3412; /* rust brown */
+  --autumn-brown: #7C4A27; /* walnut */
+  --autumn-cinnamon: #8B5E34;
+  --autumn-squash: #EAB308; /* muted yellow */
+  --autumn-sage: #6C7A61; /* muted olive/sage for balance */
 
-  /* Autumn accent gradient hint (subtle background accents) */
-  --autumn-grad: linear-gradient(135deg, rgba(30,58,138,0.06), rgba(245,158,11,0.06));
+  /* Shadows & depth tuned for warmth */
+  --shadow-sm: 0 1px 2px rgba(27, 25, 23, 0.06);
+  --shadow-md: 0 6px 16px rgba(27, 25, 23, 0.08);
+
+  /* Decorative gradients and textures */
+  --autumn-grad: linear-gradient(135deg, rgba(217,119,6,0.10), rgba(124,74,39,0.08)); /* pumpkin -> walnut */
+  --autumn-grad-strong: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(185,28,28,0.14));
+  --autumn-btn-grad: linear-gradient(180deg, var(--autumn-amber) 0%, var(--autumn-pumpkin) 100%);
+  --autumn-btn-grad-hover: linear-gradient(180deg, var(--autumn-amber) 0%, var(--autumn-amber-700) 100%);
+
+  /* Subtle SVG background (inline, repeating) - accessible and low-contrast */
+  /* Leaf vein micro-pattern, used in headers/footers as overlay */
+  --autumn-pattern: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
+    <g fill='none' stroke='rgba(124,74,39,0.06)' stroke-width='1'>\
+      <path d='M0 48 C16 44, 48 20, 64 16'/>\
+      <path d='M0 32 C16 28, 48 8, 64 4'/>\
+      <path d='M0 56 C16 52, 48 36, 64 32'/>\
+    </g>\
+  </svg>");
+
+  /* Rounded radii tuned to feel friendlier for the season */
+  --radius-md: 12px;
+  --radius-lg: 14px;
+
+  /* Focus ring with fall accent and strong contrast */
+  --focus-ring: 0 0 0 3px rgba(245, 158, 11, 0.35);
 }
 
 [data-theme="dark"] {
+  /* Dark mode pivots to higher contrast while retaining warmth */
   --bg: #0f172a;         /* Slate-900 */
-  --surface: #111827;    /* Gray-900 */
-  --text: #F9FAFB;       /* Gray-50 */
-  --muted: #9CA3AF;      /* Gray-400 */
-  --border: #1F2937;     /* Gray-800 */
-  --border-strong: #374151; /* Gray-700 */
+  --surface: #101418;    /* deep slate */
+  --surface-warm: #0f1418;
+  --text: #F7F8FA;       /* Gray-50 */
+  --muted: #C9C5C0;      /* warm gray-300 */
+  --border: #1e2630;     /* deep border */
+  --border-strong: #2a3442;
+
   --primary: #3b82f6;    /* Blue-500 for better contrast in dark mode */
   --primary-strong: #2563eb;
   --secondary: #f59e0b;
+
+  --autumn-grad: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(185,28,28,0.08));
+  --autumn-grad-strong: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(185,28,28,0.18));
+  --autumn-btn-grad: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+  --autumn-btn-grad-hover: linear-gradient(180deg, #f59e0b 0%, #92400e 100%);
+
+  --autumn-pattern: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>\
+    <g fill='none' stroke='rgba(201,197,192,0.07)' stroke-width='1'>\
+      <path d='M0 48 C16 44, 48 20, 64 16'/>\
+      <path d='M0 32 C16 28, 48 8, 64 4'/>\
+      <path d='M0 56 C16 52, 48 36, 64 32'/>\
+    </g>\
+  </svg>");
 }

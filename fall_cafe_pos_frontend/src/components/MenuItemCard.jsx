@@ -6,8 +6,9 @@ export default function MenuItemCard({ item, onAdd }) {
       <div style={{
         height: 100,
         borderRadius: 10,
-        background: 'var(--autumn-grad)',
-        border: '1px solid var(--border)'
+        background: 'var(--autumn-grad-strong)',
+        border: '1px solid var(--border)',
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.25)'
       }} aria-hidden />
       <div style={{ display: 'grid', gap: 4 }}>
         <strong>{item.name}</strong>
