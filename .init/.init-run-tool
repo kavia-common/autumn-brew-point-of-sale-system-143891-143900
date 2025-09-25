@@ -1,0 +1,4 @@
+{
+    "command": "PORT=<port> HOST=<host> BROWSER=none npm start",
+    "working_directory": "/home/kavia/workspace/code-generation/autumn-brew-point-of-sale-system-143891-143900/fall_cafe_pos_frontend"
+}
