@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getURL } from './getURL';
 
 /**
  * PUBLIC_INTERFACE
@@ -7,22 +8,35 @@ import { createClient } from '@supabase/supabase-js';
  */
 let supabaseInstance = null;
 
+function validateEnv() {
+  const url = process.env.REACT_APP_SUPABASE_URL;
+  const key = process.env.REACT_APP_SUPABASE_KEY;
+
+  if (!url || !key) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      'Supabase env missing: Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY in .env. ' +
+      'App will use local fallbacks for read operations and may not persist data.'
+    );
+  }
+  return { url: url || '', key: key || '' };
+}
+
 // PUBLIC_INTERFACE
 export function getSupabase() {
   /** Returns a singleton Supabase client configured using env variables. */
   if (supabaseInstance) return supabaseInstance;
 
-  const url = process.env.REACT_APP_SUPABASE_URL;
-  const key = process.env.REACT_APP_SUPABASE_KEY;
+  const { url, key } = validateEnv();
 
-  if (!url || !key) {
-    // Provide a clear error to the developer if env is missing.
-    // Do not crash the app; features will gracefully degrade with local state.
-    // eslint-disable-next-line no-console
-    console.warn('Supabase env missing: Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY');
-  }
-
-  supabaseInstance = createClient(url || '', key || '');
+  supabaseInstance = createClient(url, key, {
+    auth: {
+      // This prepares for future email/OAuth flows. Redirects must be allowlisted in Supabase.
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    }
+  });
   return supabaseInstance;
 }
 
@@ -31,3 +45,9 @@ export function getAuth() {
   /** Returns the Supabase auth interface */
   return getSupabase().auth;
 }
+
+// OPTIONAL HELPERS FOR FUTURE AUTH FLOWS
+export const authRedirects = {
+  callback: () => `${getURL()}auth/callback`,
+  resetPassword: () => `${getURL()}auth/reset-password`,
+};
