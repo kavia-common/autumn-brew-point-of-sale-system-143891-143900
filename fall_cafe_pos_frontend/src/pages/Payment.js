@@ -10,7 +10,9 @@ export default function Payment() {
    */
   const location = useLocation();
   const navigate = useNavigate();
-  const items = location.state?.orderItems || [];
+
+  // Memoize items from location state to avoid changing reference each render
+  const items = useMemo(() => location.state?.orderItems || [], [location.state?.orderItems]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, it) => sum + it.price * it.qty, 0),
